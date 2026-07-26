@@ -1,5 +1,22 @@
-build/
-sdkconfig
-sdkconfig.old
-.idea
-venv
+# ESP-IDF generated files
+**/build/
+**/managed_components/
+**/sdkconfig.old
+
+# Python generated files
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local recordings and logs
+data/raw/
+recordings/
+*.log
+
+# Operating-system files
+Thumbs.db
+.DS_Store
+
+# Local VS Code settings
+.vscode/settings.json
