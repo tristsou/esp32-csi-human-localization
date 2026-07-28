@@ -179,6 +179,27 @@ function renderRoom(state) {
     ctx.fillText(d.label, px + 9, py + 4);
   }
 
+  // Person-to-device lines: dotted, with opacity/thickness scaled by how
+  // much that device's disturbance is currently contributing — a visual
+  // hint at which devices are driving the triangulation for each person.
+  const maxDisturbance = Math.max(1, ...state.devices.map((d) => d.disturbance));
+  for (const p of state.people) {
+    for (const d of state.devices) {
+      const strength = Math.max(0, d.disturbance) / maxDisturbance;
+      if (strength < 0.05) continue;
+      const [px, py] = toPx(p.x, p.y);
+      const [dx, dy] = toPx(d.x, d.y);
+      ctx.beginPath();
+      ctx.setLineDash([4, 5]);
+      ctx.strokeStyle = hexWithAlpha(p.color, 0.15 + strength * 0.55);
+      ctx.lineWidth = 0.5 + strength * 2.5;
+      ctx.moveTo(px, py);
+      ctx.lineTo(dx, dy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
   // People trails + markers
   for (const p of state.people) {
     if (p.trail && p.trail.length > 1) {

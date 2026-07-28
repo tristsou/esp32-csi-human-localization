@@ -269,6 +269,19 @@ class MultiPersonTracker:
         if sum(self.latest_disturbance.values()) < MIN_DISTURBANCE_TO_DETECT:
             return []
 
+        # When the session is configured for at most 1 person, there's never
+        # a second source to disentangle from — skip the multi-start joint
+        # search entirely and solve the raw field directly. This is exact
+        # for a single clean source (see `_solve_residual`) and avoids the
+        # seed-search noise the general k-person path accepts as the price
+        # of escaping false fixed points that only exist when 2+ people can
+        # be superimposed in the same field.
+        if self.max_people == 1:
+            x, y, strength, _ = self._solve_residual(dict(self.latest_disturbance))
+            if strength < MIN_DISTURBANCE_TO_DETECT:
+                return []
+            return [(x, y, strength)]
+
         now = time.time()
         tracks_by_confidence = sorted(self.tracks.values(), key=lambda t: -t.confidence)
         priors = [t.predicted_xy(now) for t in tracks_by_confidence]

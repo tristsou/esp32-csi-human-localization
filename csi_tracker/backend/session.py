@@ -41,8 +41,16 @@ class TrackingSession:
         self.config.validate()
         device_ids = [d.id for d in self.config.devices]
 
+        tracker_max_people = self.config.max_people
+        if mode == "demo":
+            # Demo mode is told exactly how many simulated walkers exist, so
+            # the tracker can be given that same known bound — including the
+            # simplified single-source path when there's only ever 1 person.
+            # Still capped by config's max_people as an upper bound.
+            tracker_max_people = min(self.config.max_people, opts.get("num_people", 2))
+
         self.calibrator = Calibrator(device_ids, duration_s=self.config.calibration_seconds)
-        self.tracker = MultiPersonTracker(self.config.devices, self.config.room, self.calibrator, self.config.max_people)
+        self.tracker = MultiPersonTracker(self.config.devices, self.config.room, self.calibrator, tracker_max_people)
         self.logger = SessionLogger(self.log_dir)
         self._device_signal_latest = {d: 0.0 for d in device_ids}
 
@@ -125,5 +133,5 @@ class TrackingSession:
             ],
             "room": {"width_m": self.config.room.width_m, "height_m": self.config.room.height_m},
             "people": [t.to_dict() for t in sorted(self.tracker.tracks.values(), key=lambda t: t.id)] if self.tracker else [],
-            "max_people": self.config.max_people,
+            "max_people": self.tracker.max_people if self.tracker else self.config.max_people,
         }

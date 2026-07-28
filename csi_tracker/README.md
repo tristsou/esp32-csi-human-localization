@@ -26,10 +26,17 @@ two modes.
    field — the lowest-error layout wins. This multi-start search is what
    keeps IDs stable even when two or three people are close together, where
    a single greedy solve can lock onto a plausible-looking but wrong
-   position. Solved positions are then associated with existing tracks
-   (nearest-neighbor gating) or spawned as new tracks (up to `max_people`).
-   Each track is smoothed with a constant-velocity filter so motion stays
-   continuous.
+   position. When a session is configured for at most 1 person
+   (`max_people: 1`, or the demo mode people-count selector set to 1), the
+   tracker skips this search entirely and solves the raw disturbance field
+   directly — exact and much cheaper, since there's never a second person's
+   contribution to disentangle. Solved positions are then associated with
+   existing tracks (nearest-neighbor gating) or spawned as new tracks (up to
+   `max_people`). Each track is smoothed with a constant-velocity filter so
+   motion stays continuous. The room view draws a dotted line from each
+   tracked person to every device, with opacity/thickness scaled by that
+   device's current disturbance — a visual hint at which devices are
+   actually driving the triangulation at any moment.
 3. **Logging** — every raw reading and every tracked frame is buffered and
    flushed to `logs/session_<timestamp>.jsonl` every 2 seconds, for later
    playback or offline model training.
