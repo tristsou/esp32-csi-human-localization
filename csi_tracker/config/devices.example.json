@@ -1,0 +1,16 @@
+{
+  "room": {
+    "width_m": 6.0,
+    "height_m": 4.0
+  },
+  "calibration_seconds": 10,
+  "max_people": 3,
+  "devices": [
+    { "id": "esp32-1", "label": "Corner A", "x_m": 0.0, "y_m": 0.0, "source": "serial", "port": "/dev/tty.usbserial-1410", "baud": 921600 },
+    { "id": "esp32-2", "label": "Wall Mid A", "x_m": 3.0, "y_m": 0.0, "source": "serial", "port": "/dev/tty.usbserial-1415", "baud": 921600 },
+    { "id": "esp32-3", "label": "Corner B", "x_m": 6.0, "y_m": 0.0, "source": "serial", "port": "/dev/tty.usbserial-1420", "baud": 921600 },
+    { "id": "esp32-4", "label": "Corner C", "x_m": 6.0, "y_m": 4.0, "source": "serial", "port": "/dev/tty.usbserial-1430", "baud": 921600 },
+    { "id": "esp32-5", "label": "Wall Mid B", "x_m": 3.0, "y_m": 4.0, "source": "serial", "port": "/dev/tty.usbserial-1435", "baud": 921600 },
+    { "id": "esp32-6", "label": "Corner D", "x_m": 0.0, "y_m": 4.0, "source": "serial", "port": "/dev/tty.usbserial-1440", "baud": 921600 }
+  ]
+}

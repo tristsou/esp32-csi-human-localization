@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSI Human Localization Tracker</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1>CSI Human Localization Tracker</h1>
+      <div class="mode-controls">
+        <label for="mode-select">Mode</label>
+        <select id="mode-select">
+          <option value="demo">Demo (simulated)</option>
+          <option value="live">Live feed</option>
+          <option value="playback">Playback from log</option>
+        </select>
+
+        <label for="demo-people" class="demo-only">People</label>
+        <select id="demo-people" class="demo-only">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+        </select>
+
+        <label for="playback-select" class="playback-only hidden">Log file</label>
+        <select id="playback-select" class="playback-only hidden"></select>
+
+        <button id="start-btn">Start</button>
+        <button id="stop-btn" disabled>Stop</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="room-panel">
+        <div class="room-header">
+          <span id="state-badge" class="badge badge-idle">idle</span>
+          <div id="calibration-bar-wrap" class="calibration-bar-wrap hidden">
+            <div class="calibration-bar"><div id="calibration-fill" class="calibration-fill"></div></div>
+            <span id="calibration-label">Calibrating… 0%</span>
+          </div>
+        </div>
+        <canvas id="room-canvas" width="900" height="600"></canvas>
+        <p class="hint">Devices shown as squares. People shown as colored circles with motion trails. IDs persist for the session.</p>
+      </section>
+
+      <aside class="side-panels">
+        <div class="panel">
+          <h2>Session</h2>
+          <dl class="kv">
+            <dt>Mode</dt><dd id="kv-mode">–</dd>
+            <dt>State</dt><dd id="kv-state">–</dd>
+            <dt>People detected</dt><dd id="kv-people-count">0</dd>
+            <dt>Max people</dt><dd id="kv-max-people">–</dd>
+          </dl>
+        </div>
+
+        <div class="panel">
+          <h2>People</h2>
+          <div id="people-list" class="people-list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Devices</h2>
+          <div id="device-list" class="device-list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Log</h2>
+          <p class="muted">Readings and track states are written continuously to <code>csi_tracker/logs/*.jsonl</code>, flushed every 2s.</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
