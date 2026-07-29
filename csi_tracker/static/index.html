@@ -28,6 +28,7 @@
 
     <nav class="tabs">
       <button id="tab-room" class="tab active" data-tab="room">Room</button>
+      <button id="tab-signals" class="tab" data-tab="signals">Signals</button>
       <button id="tab-config" class="tab" data-tab="config">Configuration</button>
     </nav>
 
@@ -72,6 +73,32 @@
       </aside>
     </main>
 
+    <main class="layout hidden" id="view-signals">
+      <section class="room-panel">
+        <div id="signal-cards" class="signal-cards"></div>
+        <p class="hint">Last 30s, accumulated in the browser. In demo mode RSSI is synthetic
+          (derived from the same disturbance as signal) and mirrors the signal chart.</p>
+      </section>
+
+      <aside class="side-panels">
+        <div class="panel">
+          <h2>Legend</h2>
+          <div class="signal-legend">
+            <span class="signal-legend-row"><span class="signal-legend-swatch" style="background:#3987e5"></span>Signal (raw CSI amplitude)</span>
+            <span class="signal-legend-row"><span class="signal-legend-swatch" style="background:#8a8a83"></span>Baseline (calibrated mean)</span>
+            <span class="signal-legend-row"><span class="signal-legend-swatch" style="background:#d95926"></span>Disturbance</span>
+            <span class="signal-legend-row"><span class="signal-legend-swatch" style="background:#8a8a83"></span>Detection threshold</span>
+            <span class="signal-legend-row"><span class="signal-legend-swatch" style="background:#199e70"></span>RSSI</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Readings</h2>
+          <div id="signal-table" class="device-list"></div>
+        </div>
+      </aside>
+    </main>
+
     <main class="layout hidden" id="view-config">
       <section class="room-panel">
         <div class="config-actions">
@@ -108,6 +135,8 @@
       </aside>
     </main>
   </div>
+
+  <div id="signal-tooltip" class="hidden"></div>
 
   <script src="/static/app.js"></script>
 </body>

@@ -74,7 +74,42 @@ multilateration) and either `source: "serial"` (with `port`/`baud`) or
 CSI_TRACKER_CONFIG=./config/devices.example.json python3 run.py
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:8000`. Override the bind address/port with
+`CSI_TRACKER_HOST` / `CSI_TRACKER_PORT` (defaults `0.0.0.0` / `8000`):
+
+```bash
+CSI_TRACKER_PORT=9000 python3 run.py
+```
+
+## Signals tab
+
+A **Signals** tab sits between **Room** and **Configuration** for hardware
+monitoring and debugging: one card per configured device, each showing
+
+- a **liveness** chip (`waiting` / `live` / `stale` / `dead`, glyph + word) and
+  current **packet rate** in the card header,
+- a **signal vs. baseline** sparkline (raw CSI amplitude vs. the calibrated
+  "empty room" mean),
+- a **disturbance vs. detection threshold** sparkline (the same threshold the
+  Room view uses to decide a device is "active"),
+- an **RSSI** sparkline (dBm).
+
+History is accumulated **in the browser** from the last ~30 seconds of
+WebSocket frames — there's no server-side history buffer or new endpoint, so
+this works identically in demo, live, and playback modes. Liveness is derived
+from how long it's been since a device's last reading arrived (not from the
+reading's own timestamp), so it correctly reflects real elapsed time even
+during fast-forwarded playback of an old log. A device that stops sending
+data flips from `live` to `stale` to `dead` within a few seconds, which is the
+main thing this tab is for: a device that goes quiet still looks fine in the
+Room view (it just keeps showing its last known position), but shows up
+immediately here.
+
+Hovering a card shows a synchronized crosshair across its three charts plus a
+tooltip with the exact signal, baseline, disturbance, RSSI, and rate at that
+point; the side panel also lists current values in a plain table. In demo
+mode, RSSI is synthetic (derived from the same disturbance value as signal),
+so its sparkline mirrors the signal chart — that's expected, not a bug.
 
 ## Configuration tab
 

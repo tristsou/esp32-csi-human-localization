@@ -6,9 +6,12 @@ from .logging_writer import SessionLogger
 from .sources.demo import DemoSource
 from .sources.live import LiveSource
 from .sources.playback import PlaybackSource
-from .tracker import MultiPersonTracker
+from .tracker import MIN_DISTURBANCE_TO_DETECT, MultiPersonTracker
 
 TRACKER_TICK_S = 0.1
+RATE_SMOOTHING = 0.05  # EMA weight on each new inter-arrival sample
+STALE_AFTER_S = 1.0
+DEAD_AFTER_S = 3.0
 
 
 class TrackingSession:
@@ -28,6 +31,9 @@ class TrackingSession:
         self.tracker = None
         self.logger = None
         self._device_signal_latest = {}
+        self._device_rssi_latest = {}
+        self._device_last_seen = {}
+        self._device_packet_rate = {}
         self._running = False
         self._tasks = []
         self.state = "idle"  # idle | calibrating | tracking | stopped
@@ -53,6 +59,9 @@ class TrackingSession:
         self.tracker = MultiPersonTracker(self.config.devices, self.config.room, self.calibrator, tracker_max_people)
         self.logger = SessionLogger(self.log_dir)
         self._device_signal_latest = {d: 0.0 for d in device_ids}
+        self._device_rssi_latest = {d: 0.0 for d in device_ids}
+        self._device_last_seen = {d: 0.0 for d in device_ids}
+        self._device_packet_rate = {d: 0.0 for d in device_ids}
 
         if mode == "demo":
             self.num_people_demo = opts.get("num_people", self.config.max_people)
@@ -97,12 +106,32 @@ class TrackingSession:
     async def _consume_readings(self):
         async for reading in self.source.readings():
             self._device_signal_latest[reading.device_id] = reading.signal
+            self._device_rssi_latest[reading.device_id] = reading.rssi
             self.logger.log_reading(reading.device_id, reading.timestamp, reading.signal, reading.rssi)
+
+            # Arrival time, not reading.timestamp: playback replays a log's
+            # original recording-time timestamps, which can be days old.
+            arrived = time.time()
+            prev_seen = self._device_last_seen.get(reading.device_id, 0.0)
+            if prev_seen:
+                inst_rate = 1.0 / max(arrived - prev_seen, 1e-6)
+                prev_rate = self._device_packet_rate.get(reading.device_id, 0.0)
+                self._device_packet_rate[reading.device_id] = prev_rate + RATE_SMOOTHING * (inst_rate - prev_rate)
+            self._device_last_seen[reading.device_id] = arrived
 
             if self.state == "calibrating":
                 self.calibrator.observe(reading.device_id, reading.signal)
             else:
                 self.tracker.observe(reading.device_id, reading.signal)
+
+    def _liveness(self, device_id: str, now: float) -> str:
+        last_seen = self._device_last_seen.get(device_id, 0.0)
+        if not last_seen:
+            return "waiting"
+        age = now - last_seen
+        if age > DEAD_AFTER_S:
+            return "dead"
+        return "stale" if age > STALE_AFTER_S else "live"
 
     async def _tracker_loop(self):
         while self._running:
@@ -120,6 +149,7 @@ class TrackingSession:
             await asyncio.sleep(TRACKER_TICK_S)
 
     def snapshot(self):
+        now = time.time()
         return {
             "state": self.state,
             "mode": self.mode,
@@ -133,10 +163,15 @@ class TrackingSession:
                     "signal": round(self._device_signal_latest.get(d.id, 0.0), 2),
                     "disturbance": round(self.tracker.latest_disturbance.get(d.id, 0.0), 2) if self.tracker else 0.0,
                     "baseline_mean": round(self.calibrator.baseline_for(d.id).mean, 2) if self.calibrator else 0.0,
+                    "baseline_std": round(self.calibrator.baseline_for(d.id).std, 2) if self.calibrator else 0.0,
+                    "rssi": round(self._device_rssi_latest.get(d.id, 0.0), 1),
+                    "packet_rate": round(self._device_packet_rate.get(d.id, 0.0), 1),
+                    "liveness": self._liveness(d.id, now),
                 }
                 for d in self.config.devices
             ],
             "room": {"width_m": self.config.room.width_m, "height_m": self.config.room.height_m},
             "people": [t.to_dict() for t in sorted(self.tracker.tracks.values(), key=lambda t: t.id)] if self.tracker else [],
             "max_people": self.tracker.max_people if self.tracker else self.config.max_people,
+            "detect_threshold": MIN_DISTURBANCE_TO_DETECT,
         }
