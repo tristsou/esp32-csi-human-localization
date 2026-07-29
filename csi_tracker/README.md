@@ -27,7 +27,7 @@ two modes.
    keeps IDs stable even when two or three people are close together, where
    a single greedy solve can lock onto a plausible-looking but wrong
    position. When a session is configured for at most 1 person
-   (`max_people: 1`, or the demo mode people-count selector set to 1), the
+   (`max_people: 1` in the Configuration tab), the
    tracker skips this search entirely and solves the raw disturbance field
    directly — exact and much cheaper, since there's never a second person's
    contribution to disentangle. Solved positions are then associated with
@@ -50,7 +50,8 @@ pip install -r requirements.txt
 ```
 
 Edit `config/devices.example.json` (or copy it and point `CSI_TRACKER_CONFIG`
-at your copy) to describe your room and 2–6 devices:
+at your copy), or use the **Configuration** tab in the UI (see below), to
+describe your room and 2–6 devices:
 
 ```json
 {
@@ -75,10 +76,25 @@ CSI_TRACKER_CONFIG=./config/devices.example.json python3 run.py
 
 Then open `http://localhost:8000`.
 
+## Configuration tab
+
+The UI has a **Configuration** tab alongside **Room**, showing room size,
+calibration duration, `max_people`, and the device list as an editable form. It
+loads from the file on startup (see [Setup](#setup) for the path precedence).
+Edits are held in memory and take effect the next time you press **Start** — the
+file on disk isn't touched until you click **Save to file**, which writes to
+`config/devices.local.json` (gitignored) so local device ports/positions never
+end up in a commit. `CSI_TRACKER_CONFIG`, if set, takes priority on load and is
+also where Save writes back to. The editor is disabled while a session is
+running; **Revert to file** discards in-memory edits and reloads from disk.
+Server-side validation (2–6 devices, unique ids, `max_people` 1–3) runs when you
+press Start, and blocks with an error message if it fails.
+
 ## Modes (selectable in the UI)
 
-- **Demo** — realistic simulated walkers (1–3, chosen in the UI), no hardware
-  required. Each walker wanders goal-directed rather than bouncing off walls:
+- **Demo** — realistic simulated walkers, no hardware required. The number of
+  walkers matches `max_people` from the Configuration tab. Each walker wanders
+  goal-directed rather than bouncing off walls:
   it picks a waypoint away from the walls, walks toward it at a slow human
   pace (~0.4–0.7 m/s) with a little steering noise, eases speed/heading
   through turns and on approach, curves gently away if it nears a wall

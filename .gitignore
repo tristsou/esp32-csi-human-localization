@@ -14,6 +14,9 @@ data/raw/
 recordings/
 *.log
 
+# Locally-saved CSI tracker config (edited via the UI's Configuration tab)
+csi_tracker/config/devices.local.json
+
 # Operating-system files
 Thumbs.db
 .DS_Store

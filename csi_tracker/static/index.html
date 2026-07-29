@@ -18,13 +18,6 @@
           <option value="playback">Playback from log</option>
         </select>
 
-        <label for="demo-people" class="demo-only">People</label>
-        <select id="demo-people" class="demo-only">
-          <option value="1">1</option>
-          <option value="2" selected>2</option>
-          <option value="3">3</option>
-        </select>
-
         <label for="playback-select" class="playback-only hidden">Log file</label>
         <select id="playback-select" class="playback-only hidden"></select>
 
@@ -33,7 +26,12 @@
       </div>
     </header>
 
-    <main class="layout">
+    <nav class="tabs">
+      <button id="tab-room" class="tab active" data-tab="room">Room</button>
+      <button id="tab-config" class="tab" data-tab="config">Configuration</button>
+    </nav>
+
+    <main class="layout" id="view-room">
       <section class="room-panel">
         <div class="room-header">
           <span id="state-badge" class="badge badge-idle">idle</span>
@@ -70,6 +68,42 @@
         <div class="panel">
           <h2>Log</h2>
           <p class="muted">Readings and track states are written continuously to <code>csi_tracker/logs/*.jsonl</code>, flushed every 2s.</p>
+        </div>
+      </aside>
+    </main>
+
+    <main class="layout hidden" id="view-config">
+      <section class="room-panel">
+        <div class="config-actions">
+          <button id="config-save-btn">Save to file</button>
+          <button id="config-revert-btn">Revert to file</button>
+          <span id="config-status" class="muted"></span>
+        </div>
+
+        <fieldset id="config-fieldset" class="config-fieldset">
+          <div class="config-grid">
+            <label for="cfg-room-w">Room width (m)</label>
+            <input id="cfg-room-w" type="number" step="0.1" min="0.1" />
+            <label for="cfg-room-h">Room height (m)</label>
+            <input id="cfg-room-h" type="number" step="0.1" min="0.1" />
+            <label for="cfg-calib">Calibration (s)</label>
+            <input id="cfg-calib" type="number" step="1" min="1" />
+            <label for="cfg-max-people">Max people</label>
+            <input id="cfg-max-people" type="number" step="1" min="1" max="3" />
+          </div>
+
+          <h2>Devices</h2>
+          <div id="cfg-device-rows" class="cfg-device-rows"></div>
+          <button id="cfg-add-device" type="button">+ Add device</button>
+        </fieldset>
+      </section>
+
+      <aside class="side-panels">
+        <div class="panel">
+          <h2>How this applies</h2>
+          <p class="muted">Edits are held in memory and used by the next <strong>Start</strong>.
+            Click <strong>Save to file</strong> to write them to
+            <code>config/devices.local.json</code> so they survive a restart.</p>
         </div>
       </aside>
     </main>

@@ -47,7 +47,7 @@ class TrackingSession:
             # the tracker can be given that same known bound — including the
             # simplified single-source path when there's only ever 1 person.
             # Still capped by config's max_people as an upper bound.
-            tracker_max_people = min(self.config.max_people, opts.get("num_people", 2))
+            tracker_max_people = min(self.config.max_people, opts.get("num_people", self.config.max_people))
 
         self.calibrator = Calibrator(device_ids, duration_s=self.config.calibration_seconds)
         self.tracker = MultiPersonTracker(self.config.devices, self.config.room, self.calibrator, tracker_max_people)
@@ -55,7 +55,7 @@ class TrackingSession:
         self._device_signal_latest = {d: 0.0 for d in device_ids}
 
         if mode == "demo":
-            self.num_people_demo = opts.get("num_people", 2)
+            self.num_people_demo = opts.get("num_people", self.config.max_people)
             self.source = DemoSource(
                 self.config.devices,
                 self.config.room,

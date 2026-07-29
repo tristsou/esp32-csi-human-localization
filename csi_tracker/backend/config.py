@@ -15,6 +15,19 @@ class DeviceConfig:
     host: str = ""
     tcp_port: int = 0
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "label": self.label,
+            "x_m": self.x_m,
+            "y_m": self.y_m,
+            "source": self.source,
+            "port": self.port,
+            "baud": self.baud,
+            "host": self.host,
+            "tcp_port": self.tcp_port,
+        }
+
 
 @dataclass
 class RoomConfig:
@@ -30,8 +43,7 @@ class AppConfig:
     devices: list = field(default_factory=list)
 
     @staticmethod
-    def load(path: str) -> "AppConfig":
-        data = json.loads(Path(path).read_text())
+    def from_dict(data: dict) -> "AppConfig":
         room = RoomConfig(**data.get("room", {}))
         devices = [DeviceConfig(**d) for d in data.get("devices", [])]
         return AppConfig(
@@ -40,6 +52,21 @@ class AppConfig:
             max_people=data.get("max_people", 3),
             devices=devices,
         )
+
+    @staticmethod
+    def load(path: str) -> "AppConfig":
+        return AppConfig.from_dict(json.loads(Path(path).read_text()))
+
+    def to_dict(self):
+        return {
+            "room": {"width_m": self.room.width_m, "height_m": self.room.height_m},
+            "calibration_seconds": self.calibration_seconds,
+            "max_people": self.max_people,
+            "devices": [d.to_dict() for d in self.devices],
+        }
+
+    def save(self, path: str):
+        Path(path).write_text(json.dumps(self.to_dict(), indent=2) + "\n")
 
     def validate(self):
         n = len(self.devices)

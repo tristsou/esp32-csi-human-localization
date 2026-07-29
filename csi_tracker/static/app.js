@@ -2,7 +2,6 @@ const canvas = document.getElementById("room-canvas");
 const ctx = canvas.getContext("2d");
 
 const modeSelect = document.getElementById("mode-select");
-const demoPeopleSelect = document.getElementById("demo-people");
 const playbackSelect = document.getElementById("playback-select");
 const startBtn = document.getElementById("start-btn");
 const stopBtn = document.getElementById("stop-btn");
@@ -17,7 +16,22 @@ const kvMaxPeople = document.getElementById("kv-max-people");
 const peopleList = document.getElementById("people-list");
 const deviceList = document.getElementById("device-list");
 
+const viewRoom = document.getElementById("view-room");
+const viewConfig = document.getElementById("view-config");
+const configFieldset = document.getElementById("config-fieldset");
+const configSaveBtn = document.getElementById("config-save-btn");
+const configRevertBtn = document.getElementById("config-revert-btn");
+const configStatus = document.getElementById("config-status");
+const cfgRoomW = document.getElementById("cfg-room-w");
+const cfgRoomH = document.getElementById("cfg-room-h");
+const cfgCalib = document.getElementById("cfg-calib");
+const cfgMaxPeople = document.getElementById("cfg-max-people");
+const cfgDeviceRows = document.getElementById("cfg-device-rows");
+const cfgAddDevice = document.getElementById("cfg-add-device");
+
 let latestState = null;
+let configDraft = null;
+let configLocked = false;
 
 function resizeCanvasBackingStore() {
   const rect = canvas.getBoundingClientRect();
@@ -29,11 +43,18 @@ resizeCanvasBackingStore();
 
 function updateModeVisibility() {
   const mode = modeSelect.value;
-  document.querySelectorAll(".demo-only").forEach((el) => el.classList.toggle("hidden", mode !== "demo"));
   document.querySelectorAll(".playback-only").forEach((el) => el.classList.toggle("hidden", mode !== "playback"));
 }
 modeSelect.addEventListener("change", updateModeVisibility);
 updateModeVisibility();
+
+function setActiveTab(name) {
+  document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+  viewRoom.classList.toggle("hidden", name !== "room");
+  viewConfig.classList.toggle("hidden", name !== "config");
+  if (name === "room") resizeCanvasBackingStore();
+}
+document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => setActiveTab(b.dataset.tab)));
 
 async function loadLogList() {
   const res = await fetch("/api/logs");
@@ -48,10 +69,133 @@ async function loadLogList() {
 }
 loadLogList();
 
+async function loadConfig() {
+  const res = await fetch("/api/config");
+  configDraft = await res.json();
+  renderConfigForm();
+}
+loadConfig();
+
+function renderConfigForm() {
+  cfgRoomW.value = configDraft.room.width_m;
+  cfgRoomH.value = configDraft.room.height_m;
+  cfgCalib.value = configDraft.calibration_seconds;
+  cfgMaxPeople.value = configDraft.max_people;
+  renderDeviceRows();
+}
+
+function renderDeviceRows() {
+  cfgDeviceRows.innerHTML = configDraft.devices
+    .map(
+      (d, i) => `
+      <div class="cfg-device-row" data-index="${i}">
+        <input data-field="id" value="${d.id}" placeholder="id" />
+        <input data-field="label" value="${d.label}" placeholder="label" />
+        <input data-field="x_m" type="number" step="0.1" value="${d.x_m}" />
+        <input data-field="y_m" type="number" step="0.1" value="${d.y_m}" />
+        <select data-field="source">
+          <option value="serial" ${d.source === "serial" ? "selected" : ""}>serial</option>
+          <option value="tcp" ${d.source === "tcp" ? "selected" : ""}>tcp</option>
+        </select>
+        <input data-field="port" value="${d.port}" placeholder="port" ${d.source !== "serial" ? "hidden" : ""} />
+        <input data-field="baud" type="number" value="${d.baud}" ${d.source !== "serial" ? "hidden" : ""} />
+        <input data-field="host" value="${d.host}" placeholder="host" ${d.source !== "tcp" ? "hidden" : ""} />
+        <input data-field="tcp_port" type="number" value="${d.tcp_port}" ${d.source !== "tcp" ? "hidden" : ""} />
+        <button data-action="remove" type="button" title="Remove device">x</button>
+      </div>`
+    )
+    .join("");
+  applyConfigLock();
+}
+
+cfgDeviceRows.addEventListener("input", (e) => {
+  const row = e.target.closest(".cfg-device-row");
+  if (!row || !e.target.dataset.field) return;
+  const dev = configDraft.devices[parseInt(row.dataset.index, 10)];
+  const field = e.target.dataset.field;
+  dev[field] = ["x_m", "y_m", "baud", "tcp_port"].includes(field) ? Number(e.target.value) : e.target.value;
+  if (field === "source") renderDeviceRows();
+});
+
+cfgDeviceRows.addEventListener("click", (e) => {
+  if (e.target.dataset.action !== "remove" || configLocked) return;
+  const row = e.target.closest(".cfg-device-row");
+  configDraft.devices.splice(parseInt(row.dataset.index, 10), 1);
+  renderDeviceRows();
+});
+
+cfgRoomW.addEventListener("input", () => { configDraft.room.width_m = Number(cfgRoomW.value); });
+cfgRoomH.addEventListener("input", () => { configDraft.room.height_m = Number(cfgRoomH.value); });
+cfgCalib.addEventListener("input", () => { configDraft.calibration_seconds = Number(cfgCalib.value); });
+cfgMaxPeople.addEventListener("input", () => { configDraft.max_people = Number(cfgMaxPeople.value); });
+
+cfgAddDevice.addEventListener("click", () => {
+  const n = configDraft.devices.length + 1;
+  configDraft.devices.push({
+    id: `esp32-${n}`,
+    label: `Device ${n}`,
+    x_m: 0,
+    y_m: 0,
+    source: "serial",
+    port: "",
+    baud: 921600,
+    host: "",
+    tcp_port: 0,
+  });
+  renderDeviceRows();
+});
+
+async function applyConfig() {
+  const res = await fetch("/api/config", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(configDraft),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    alert(data.error || "Failed to apply configuration");
+    return false;
+  }
+  return true;
+}
+
+configSaveBtn.addEventListener("click", async () => {
+  if (!(await applyConfig())) return;
+  const res = await fetch("/api/config/save", { method: "POST" });
+  const data = await res.json();
+  setConfigStatus(data.ok ? `Saved to ${data.path}` : data.error, !data.ok);
+});
+
+configRevertBtn.addEventListener("click", async () => {
+  await fetch("/api/config/reload", { method: "POST" });
+  await loadConfig();
+  setConfigStatus("Reverted to file contents", false);
+});
+
+function setConfigStatus(msg, isError) {
+  configStatus.textContent = msg || "";
+  configStatus.classList.toggle("config-status-error", !!isError);
+}
+
+function renderConfigLock(state) {
+  const locked = !(state.state === "idle" || state.state === "stopped");
+  if (locked === configLocked) return;
+  configLocked = locked;
+  applyConfigLock();
+}
+
+function applyConfigLock() {
+  configFieldset.disabled = configLocked;
+  configSaveBtn.disabled = configLocked;
+  configRevertBtn.disabled = configLocked;
+  setConfigStatus(configLocked ? "Locked while a session is running." : "", false);
+}
+
 startBtn.addEventListener("click", async () => {
+  if (!(await applyConfig())) return;
   const mode = modeSelect.value;
   const payload = { mode };
-  if (mode === "demo") payload.num_people = parseInt(demoPeopleSelect.value, 10);
+  if (mode === "demo") payload.num_people = configDraft.max_people;
   if (mode === "playback") payload.log_file = playbackSelect.value;
 
   const res = await fetch("/api/session/start", {
@@ -93,6 +237,7 @@ function render(state) {
   renderPeopleList(state);
   renderDeviceList(state);
   renderRoom(state);
+  renderConfigLock(state);
 }
 
 function renderBadge(state) {

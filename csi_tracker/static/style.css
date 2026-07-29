@@ -160,3 +160,79 @@ button#stop-btn { background: var(--status-critical); border-color: var(--status
 code { background: var(--surface-2); padding: 1px 4px; border-radius: 4px; font-size: 11px; }
 
 .empty-note { color: var(--text-muted); font-size: 12px; padding: 4px 0; }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--text-primary); border-bottom-color: var(--series-1); }
+
+.config-actions { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+#config-save-btn { background: var(--series-1); border-color: var(--series-1); color: #fff; font-weight: 600; }
+.config-status-error { color: var(--status-critical); }
+
+.config-fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+.config-fieldset h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin: 18px 0 10px;
+}
+.config-fieldset:disabled { opacity: 0.5; }
+
+.config-grid {
+  display: grid;
+  grid-template-columns: auto 120px auto 120px;
+  gap: 8px 10px;
+  align-items: center;
+}
+.config-grid label { font-size: 13px; color: var(--text-secondary); }
+
+.cfg-device-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.cfg-device-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 70px 70px 90px 1fr 90px 34px;
+  gap: 6px;
+  align-items: center;
+  background: var(--surface-2);
+  padding: 8px;
+  border-radius: 6px;
+}
+.cfg-device-row button[data-action="remove"] {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+  padding: 6px 0;
+}
+.cfg-device-row button[data-action="remove"]:hover {
+  color: var(--status-critical);
+  border-color: var(--status-critical);
+}
+
+input {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+.cfg-device-row input, .cfg-device-row select { background: var(--surface-1); }
+input:disabled, select:disabled { opacity: 0.6; cursor: not-allowed; }
