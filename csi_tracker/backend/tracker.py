@@ -298,7 +298,18 @@ class MultiPersonTracker:
             best_positions = self._multi_start_joint_solve(residual_all, n_known, extra_seeds=priors)
             best_jfe = self._joint_fit_error(residual_all, best_positions)
 
-        if n_known < self.max_people:
+        # A freshly-spawned track hasn't locked onto its true position yet —
+        # its first few solves are still converging, so `best_jfe` against it
+        # is inflated for reasons that have nothing to do with a missing
+        # person. Searching for a (k+1)th person against that unsettled
+        # baseline means almost anything looks like a "big improvement" over
+        # a bad fit, which is what let a spurious 3rd track spawn during a
+        # 2-person track's own settling window. So only hunt for a new
+        # arrival once every existing track is fully confident (i.e. has
+        # matched consistently for several ticks) — a genuinely new person
+        # will still be caught the moment the existing tracks stabilize.
+        all_confident = all(t.confidence >= 1.0 for t in tracks_by_confidence)
+        if n_known < self.max_people and all_confident:
             seeds_for_new = priors + [priors[-1] if priors else (self.room.width_m / 2, self.room.height_m / 2)]
             candidate_positions = self._multi_start_joint_solve(residual_all, n_known + 1, extra_seeds=seeds_for_new)
             candidate_jfe = self._joint_fit_error(residual_all, candidate_positions)

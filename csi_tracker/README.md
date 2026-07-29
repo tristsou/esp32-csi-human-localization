@@ -77,9 +77,13 @@ Then open `http://localhost:8000`.
 
 ## Modes (selectable in the UI)
 
-- **Demo** — realistic simulated walkers (1–3, chosen in the UI) with smooth
-  random-walk motion, no hardware required. Good for exercising the full
-  pipeline and UI.
+- **Demo** — realistic simulated walkers (1–3, chosen in the UI), no hardware
+  required. Each walker wanders goal-directed rather than bouncing off walls:
+  it picks a waypoint away from the walls, walks toward it at a slow human
+  pace (~0.4–0.7 m/s) with a little steering noise, eases speed/heading
+  through turns and on approach, curves gently away if it nears a wall
+  instead of bouncing off it, then pauses briefly on arrival before picking
+  the next waypoint. Good for exercising the full pipeline and UI.
 - **Live feed** — reads real CSI CSV lines from the devices configured in
   `config/devices.example.json` over serial or TCP.
 - **Playback** — replays a previously recorded `logs/*.jsonl` file through

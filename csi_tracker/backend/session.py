@@ -56,7 +56,12 @@ class TrackingSession:
 
         if mode == "demo":
             self.num_people_demo = opts.get("num_people", 2)
-            self.source = DemoSource(self.config.devices, self.config.room, num_people=self.num_people_demo)
+            self.source = DemoSource(
+                self.config.devices,
+                self.config.room,
+                num_people=self.num_people_demo,
+                calibration_seconds=self.config.calibration_seconds,
+            )
         elif mode == "live":
             self.source = LiveSource(self.config.devices)
         elif mode == "playback":
